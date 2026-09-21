@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: assetMarketDataService
+  datasource:
+    url: jdbc:postgresql://localhost:5433/assetDataService
+    username: user
+    password: postgres
+  data:
+    redis:
+      password: admin
+      host: localhost
+      port: 6379
+      type: redis
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+alchemy:
+  url: "https://eth-mainnet.g.alchemy.com/v2/"
+  api-key: "alch_Z5hfN0VNs-lnkZ96lk6U8"
+coingecko:
+  url: "https://api.coingecko.com/api/v3/"
+  api-key: "CG-qjxKu4aBr8hkDD1DVWRgg8wG"
