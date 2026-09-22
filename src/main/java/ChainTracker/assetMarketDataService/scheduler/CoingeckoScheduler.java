@@ -17,7 +17,7 @@ public class CoingeckoScheduler {
 
 
 
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRate = 30000)
     public List<CoinMarketResponse> updateTop100Data(){
         return service.updateTop100Data();
     }

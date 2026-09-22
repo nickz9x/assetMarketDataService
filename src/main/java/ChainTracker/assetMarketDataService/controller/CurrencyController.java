@@ -1,15 +1,14 @@
 package ChainTracker.assetMarketDataService.controller;
 
 import ChainTracker.assetMarketDataService.dto.CoinMarketResponse;
+import ChainTracker.assetMarketDataService.dto.CoinMarketSimpleResponse;
 import ChainTracker.assetMarketDataService.service.CoingeckoService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/currency")
@@ -26,6 +25,11 @@ public class CurrencyController {
     @GetMapping("/{id}")
     public ResponseEntity<CoinMarketResponse> getCoin(@PathVariable String id){
         return ResponseEntity.ok(service.getCoin(id));
+    }
+
+    @GetMapping("/prices")
+    public ResponseEntity<Map<String, CoinMarketSimpleResponse>> getSimplePrices(@RequestParam List<String> ids){
+        return ResponseEntity.ok(service.getSimpleCoin(ids));
     }
 
 }
