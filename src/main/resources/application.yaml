@@ -1,6 +1,17 @@
+
 spring:
   application:
     name: assetMarketDataService
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Keycloak roda em localhost:8081. A porta 8080 e a porta INTERNA
+          # do container (mapeamento 8081:8080), nao a porta de acesso.
+          # O issuer-uri dispara o discovery em
+          # /.well-known/openid-configuration, que devolve o jwk-set-uri e
+          # faz o Spring validar a claim "iss" automaticamente.
+          issuer-uri: http://localhost:8081/realms/ChainTracker
   datasource:
     url: jdbc:postgresql://localhost:5433/assetDataService
     username: user
@@ -22,3 +33,5 @@ alchemy:
 coingecko:
   url: "https://api.coingecko.com/api/v3/"
   api-key: "CG-qjxKu4aBr8hkDD1DVWRgg8wG"
+server:
+  port: 8082

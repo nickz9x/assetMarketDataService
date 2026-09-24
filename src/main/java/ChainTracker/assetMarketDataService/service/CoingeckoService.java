@@ -24,10 +24,6 @@ public class CoingeckoService {
     private final MarketDataService marketDataService;
 
     public List<CoinMarketResponse> getTop100(){
-        Object cached = redisTemplate.opsForValue().get("coins:top100");
-        if(cached != null){
-            return objectMapper.convertValue(cached, new TypeReference<List<CoinMarketResponse>>() {} );
-        }
         return client.getTop100Coins();
     }
 

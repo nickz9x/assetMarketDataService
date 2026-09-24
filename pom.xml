@@ -104,9 +104,23 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        <!-- ========================= -->
+        <!-- SECURITY -->
+        <!-- ========================= -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Habilita o papel de Resource Server: valida o JWT emitido pelo
+             Keycloak, verificando a assinatura com as chaves públicas do
+             jwk-set-uri. Sem esta dependência não existe JwtDecoder.
+             Nome do Spring Boot 4 — o antigo
+             spring-boot-starter-oauth2-resource-server está depreciado. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
         </dependency>
 
 
