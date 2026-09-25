@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +33,9 @@ public class CoingeckoService {
         if(cached != null){
             return objectMapper.convertValue(cached, CoinMarketResponse.class);
         }
-        return client.getCoin(id);
+        CoinMarketResponse coin = client.getCoin(id);
+        redisTemplate.opsForValue().set("coin:"+id,coin, Duration.ofMinutes(2));
+        return coin;
     }
 
     public Map<String, CoinMarketSimpleResponse> getSimpleCoin(List<String> ids){
