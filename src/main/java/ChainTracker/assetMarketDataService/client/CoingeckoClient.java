@@ -40,11 +40,16 @@ public class CoingeckoClient {
     }
 
     public CoinMarketResponse getCoin(String id){
-        return restClient.get()
+        List<CoinMarketResponse> coin = restClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("coins/{id}")
-                        .build(id)
-                ).retrieve().body(CoinMarketResponse.class);
+                        .path("coins/markets")
+                        .queryParam("vs_currency", "usd")
+                        .queryParam("ids", id)
+                        .build()
+                ).retrieve()
+                .body(new ParameterizedTypeReference<List<CoinMarketResponse>>() {
+                });
+        return(coin == null || coin.isEmpty()) ? null: coin.get(0);
     }
 
 
