@@ -29,7 +29,7 @@ public class MarketDataService {
         for (CoinMarketResponse coin : coins) {
             redisTemplate.opsForValue().set("coin:"+ coin.id(),coin, Duration.ofMinutes(2));
 
-            kafkaTemplate.send("market.updated",coin.id(),coin);
+            kafkaTemplate.send("market.cripto.updated",coin.id(),coin);
         }
         redisTemplate.opsForValue().set("coins:top100",coins ,Duration.ofMinutes(2));
         return coins;
