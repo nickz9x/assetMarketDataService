@@ -21,13 +21,13 @@ public class AlpacaService {
     private ObjectMapper objectMapper;
     private AlpacaAssetClient assetClient;
 
-    public Map<String, StockMarketResponse> getTop50Stock(){
-        Object cached = redisTemplate.opsForValue().get("stocks:top50");
+    public Map<String, StockMarketResponse> getTop100Stock(){
+        Object cached = redisTemplate.opsForValue().get("stocks:top100");
         if (cached != null){
             return objectMapper.convertValue(cached, new TypeReference<Map<String, StockMarketResponse>>() {
             });
         }
-        return service.updateTop50Stocks();
+        return service.updateTop100Stocks();
     }
 
     public StockMarketResponse getStock(String symbol){

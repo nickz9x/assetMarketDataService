@@ -21,8 +21,8 @@ public class StockController {
 
 
     @GetMapping
-    public ResponseEntity<Map<String, StockMarketResponse>> getTop50Stocks(){
-        return ResponseEntity.ok(service.getTop50Stock());
+    public ResponseEntity<Map<String, StockMarketResponse>> getTop100Stocks(){
+        return ResponseEntity.ok(service.getTop100Stock());
     }
 
     @GetMapping("/{symbol}")

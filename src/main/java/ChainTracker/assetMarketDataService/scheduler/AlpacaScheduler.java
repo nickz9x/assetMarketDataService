@@ -15,7 +15,7 @@ public class AlpacaScheduler {
 
 
     @Scheduled(fixedRate = 15000)
-    public Map<String, StockMarketResponse> getTop50Stocks(){
-        return service.updateTop50Stocks();
+    public Map<String, StockMarketResponse> getTop100Stocks(){
+        return service.updateTop100Stocks();
     }
 }

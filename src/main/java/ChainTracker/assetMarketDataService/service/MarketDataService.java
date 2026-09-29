@@ -45,7 +45,7 @@ public class MarketDataService {
         return map;
     }
 
-    public Map<String, StockMarketResponse> updateTop50Stocks(){
+    public Map<String, StockMarketResponse> updateTop100Stocks(){
         Map<String,StockMarketResponse> stocksMap = new HashMap<>();
         Map<String, StockSnapshotResponse> quotes = alpacaDataClient.getSnapshots();
         for (Map.Entry<String, StockSnapshotResponse> stock : quotes.entrySet()) {
@@ -54,7 +54,7 @@ public class MarketDataService {
             redisTemplate.opsForValue().set("stock:"+stock.getKey(), response ,Duration.ofMinutes(3));
             kafkaTemplate.send("market.tradfi.updated",stock.getKey(),response);
         }
-        redisTemplate.opsForValue().set("stocks:top50",stocksMap,Duration.ofMinutes(3));
+        redisTemplate.opsForValue().set("stocks:top100",stocksMap,Duration.ofMinutes(3));
         return stocksMap;
     }
 
