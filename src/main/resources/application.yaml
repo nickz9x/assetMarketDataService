@@ -33,5 +33,10 @@ alchemy:
 coingecko:
   url: "https://api.coingecko.com/api/v3/"
   api-key: "CG-qjxKu4aBr8hkDD1DVWRgg8wG"
+alpaca:
+  trading-url: "https://paper-api.alpaca.markets/v2/"
+  url: "https://data.alpaca.markets/v2/"
+  api-key: "PK25OOHQUWHCUHF6YLFJUO7P2Q"
+  api-secret: "DSHSTNNV5nT6MTQR6XqKDzmTDXL6kq6s7qdMgRRcWNny"
 server:
   port: 8082
