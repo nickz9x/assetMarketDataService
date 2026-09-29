@@ -1,17 +1,19 @@
 package ChainTracker.assetMarketDataService.service;
 
+import ChainTracker.assetMarketDataService.client.AlpacaDataClient;
 import ChainTracker.assetMarketDataService.client.CoingeckoClient;
 import ChainTracker.assetMarketDataService.dto.CoinMarketResponse;
 import ChainTracker.assetMarketDataService.dto.CoinMarketSimpleResponse;
-import lombok.AllArgsConstructor;
+import ChainTracker.assetMarketDataService.dto.StockMarketResponse;
+import ChainTracker.assetMarketDataService.dto.StockSnapshotResponse;
+import ChainTracker.assetMarketDataService.mapper.StockMarketMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +24,7 @@ public class MarketDataService {
     private final CoingeckoClient client;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final RedisTemplate<String,Object> redisTemplate;
-
+    private final AlpacaDataClient alpacaDataClient;
 
     public List<CoinMarketResponse> updateTop100Data(){
         List<CoinMarketResponse> coins = client.getTop100Coins();
@@ -43,4 +45,24 @@ public class MarketDataService {
         return map;
     }
 
+    public Map<String, StockMarketResponse> updateTop50Stocks(){
+        Map<String,StockMarketResponse> stocksMap = new HashMap<>();
+        Map<String, StockSnapshotResponse> quotes = alpacaDataClient.getSnapshots();
+        for (Map.Entry<String, StockSnapshotResponse> stock : quotes.entrySet()) {
+            StockMarketResponse response = StockMarketMapper.toResponse(stock.getKey(), stock.getValue());
+            stocksMap.put(stock.getKey(),response);
+            redisTemplate.opsForValue().set("stock:"+stock.getKey(), response ,Duration.ofMinutes(3));
+            kafkaTemplate.send("market.tradfi.updated",stock.getKey(),response);
+        }
+        redisTemplate.opsForValue().set("stocks:top50",stocksMap,Duration.ofMinutes(3));
+        return stocksMap;
+    }
+
+    public StockMarketResponse getStock(String symbol){
+        StockSnapshotResponse snapshot = alpacaDataClient.getSnapshot(symbol);
+        StockMarketResponse response = StockMarketMapper.toResponse(symbol, snapshot);
+        redisTemplate.opsForValue().set("stock:"+response.symbol(),response,Duration.ofMinutes(3));
+        kafkaTemplate.send("market.tradfi.updated",symbol,response);
+        return response;
+    }
 }
