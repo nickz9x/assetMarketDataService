@@ -27,6 +27,9 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+  jpa:
+    hibernate:
+      ddl-auto: update
 alchemy:
   url: "https://eth-mainnet.g.alchemy.com/v2/"
   api-key: "alch_Z5hfN0VNs-lnkZ96lk6U8"
