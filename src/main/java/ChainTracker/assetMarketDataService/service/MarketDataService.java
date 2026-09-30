@@ -2,10 +2,7 @@ package ChainTracker.assetMarketDataService.service;
 
 import ChainTracker.assetMarketDataService.client.AlpacaDataClient;
 import ChainTracker.assetMarketDataService.client.CoingeckoClient;
-import ChainTracker.assetMarketDataService.dto.CoinMarketResponse;
-import ChainTracker.assetMarketDataService.dto.CoinMarketSimpleResponse;
-import ChainTracker.assetMarketDataService.dto.StockMarketResponse;
-import ChainTracker.assetMarketDataService.dto.StockSnapshotResponse;
+import ChainTracker.assetMarketDataService.dto.*;
 import ChainTracker.assetMarketDataService.mapper.StockMarketMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -25,12 +22,13 @@ public class MarketDataService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final RedisTemplate<String,Object> redisTemplate;
     private final AlpacaDataClient alpacaDataClient;
+    private final CoinService coinService;
 
     public List<CoinMarketResponse> updateTop100Data(){
         List<CoinMarketResponse> coins = client.getTop100Coins();
         for (CoinMarketResponse coin : coins) {
+            coinService.save(new CoinDataSimpleRequest(coin.id(),coin.name(),coin.symbol()));
             redisTemplate.opsForValue().set("coin:"+ coin.id(),coin, Duration.ofMinutes(2));
-
             kafkaTemplate.send("market.cripto.updated",coin.id(),coin);
         }
         redisTemplate.opsForValue().set("coins:top100",coins ,Duration.ofMinutes(2));
