@@ -1,6 +1,7 @@
 package ChainTracker.assetMarketDataService.service;
 
 import ChainTracker.assetMarketDataService.client.CoingeckoClient;
+import ChainTracker.assetMarketDataService.dto.CoinDataSimpleResponse;
 import ChainTracker.assetMarketDataService.dto.CoinMarketResponse;
 import ChainTracker.assetMarketDataService.dto.CoinMarketSimpleResponse;
 import lombok.AllArgsConstructor;

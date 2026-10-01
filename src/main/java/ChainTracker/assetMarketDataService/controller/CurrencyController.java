@@ -1,7 +1,9 @@
 package ChainTracker.assetMarketDataService.controller;
 
+import ChainTracker.assetMarketDataService.dto.CoinDataSimpleResponse;
 import ChainTracker.assetMarketDataService.dto.CoinMarketResponse;
 import ChainTracker.assetMarketDataService.dto.CoinMarketSimpleResponse;
+import ChainTracker.assetMarketDataService.service.CoinService;
 import ChainTracker.assetMarketDataService.service.CoingeckoService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +17,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class CurrencyController {
     private CoingeckoService service;
-
+    private CoinService coinService;
 
     @GetMapping
     public ResponseEntity<List<CoinMarketResponse>> getTop100(){
@@ -30,6 +32,11 @@ public class CurrencyController {
     @GetMapping("/prices")
     public ResponseEntity<Map<String, CoinMarketSimpleResponse>> getSimplePrices(@RequestParam List<String> ids){
         return ResponseEntity.ok(service.getSimpleCoin(ids));
+    }
+
+    @GetMapping("/data/{assetId}")
+    private ResponseEntity<CoinDataSimpleResponse> getCoinData(@PathVariable String assetId){
+        return ResponseEntity.ok(coinService.getCoinData(assetId));
     }
 
 }

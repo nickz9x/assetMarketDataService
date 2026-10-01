@@ -20,6 +20,7 @@ public class AlpacaService {
     private MarketDataService service;
     private ObjectMapper objectMapper;
     private AlpacaAssetClient assetClient;
+    private StockService stockService;
 
     public Map<String, StockMarketResponse> getTop100Stock(){
         Object cached = redisTemplate.opsForValue().get("stocks:top100");
@@ -40,6 +41,8 @@ public class AlpacaService {
     }
 
     public List<StockAssetResponse> getUsEquity(){
-        return assetClient.updateUsEquity();
+        List<StockAssetResponse> list = assetClient.updateUsEquity();
+        stockService.saveAll(list);
+        return list;
     }
 }
