@@ -14,4 +14,7 @@ public class StockAssetMapper {
         return stock;
     }
 
+    public static StockAssetResponse toResponse(Stock stock){
+        return new StockAssetResponse(stock.getSymbol(), stock.getName(), stock.getExchange(), stock.getActive());
+    }
 }

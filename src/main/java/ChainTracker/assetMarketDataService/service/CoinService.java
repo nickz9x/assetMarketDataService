@@ -30,7 +30,6 @@ public class CoinService {
             coin.setName(dto.name());
             coin.setSymbol(dto.symbol());
             coinRepository.save(coin);
-
             return new CoinDataSimpleResponse(coin.getAssetId(), coin.getName(), coin.getSymbol());
         }
         else {
@@ -40,9 +39,8 @@ public class CoinService {
 
 
     public CoinDataSimpleResponse getCoinData(String assetId) {
-        String cacheKey = "coin.data:" + assetId;
-
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        assetId = assetId.toLowerCase();
+        Object cached = redisTemplate.opsForValue().get("coin.data:"+assetId);
 
         if (cached != null) {
             return objectMapper.convertValue(cached, CoinDataSimpleResponse.class);
@@ -52,8 +50,7 @@ public class CoinService {
 
         CoinDataSimpleResponse response = CoinMapper.toResponse(coin);
 
-        redisTemplate.opsForValue().set(cacheKey, response, Duration.ofMinutes(10));
-
+        redisTemplate.opsForValue().set("coin.data:"+assetId, response, Duration.ofMinutes(10));
         return response;
     }
 }
