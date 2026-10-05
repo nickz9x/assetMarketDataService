@@ -9,7 +9,7 @@ import java.math.BigInteger;
 
 @Service
 @AllArgsConstructor
-public class AssetMarketDataService {
+public class WalletService {
     private AlchemyClient client;
 
 

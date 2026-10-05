@@ -1,6 +1,6 @@
 package ChainTracker.assetMarketDataService.controller;
 
-import ChainTracker.assetMarketDataService.service.AssetMarketDataService;
+import ChainTracker.assetMarketDataService.service.WalletService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,11 +14,11 @@ import java.math.BigDecimal;
 @RequestMapping("/api/wallet")
 @AllArgsConstructor
 public class WalletController {
-    public AssetMarketDataService service;
+    private WalletService walletService;
 
 
     @PostMapping("/balance/{address}")
     public ResponseEntity<BigDecimal> getBalance(@PathVariable String address){
-        return ResponseEntity.ok(service.getBalance(address));
+        return ResponseEntity.ok(walletService.getBalance(address));
     }
 }
