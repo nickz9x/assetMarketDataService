@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-public record CoinMarketResponse( String id,
+public record CryptoMarketResponse( String id,
 
                                   String symbol,
 

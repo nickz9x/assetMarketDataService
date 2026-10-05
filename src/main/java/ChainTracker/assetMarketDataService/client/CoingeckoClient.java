@@ -1,7 +1,7 @@
 package ChainTracker.assetMarketDataService.client;
 
-import ChainTracker.assetMarketDataService.dto.CoinMarketResponse;
-import ChainTracker.assetMarketDataService.dto.CoinMarketSimpleResponse;
+import ChainTracker.assetMarketDataService.dto.CryptoMarketResponse;
+import ChainTracker.assetMarketDataService.dto.CryptoMarketSimpleResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ public class CoingeckoClient {
                 .build();
     }
 
-    public List<CoinMarketResponse> getTop100Coins(){
+    public List<CryptoMarketResponse> getTop100Coins(){
        return restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("coins/markets")
@@ -36,24 +36,24 @@ public class CoingeckoClient {
                         .queryParam("page",1)
                         .build()
                 ).retrieve()
-                .body(new ParameterizedTypeReference<List<CoinMarketResponse>>() {});
+                .body(new ParameterizedTypeReference<List<CryptoMarketResponse>>() {});
     }
 
-    public CoinMarketResponse getCoin(String id){
-        List<CoinMarketResponse> coin = restClient.get()
+    public CryptoMarketResponse getCoin(String id){
+        List<CryptoMarketResponse> coin = restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("coins/markets")
                         .queryParam("vs_currency", "usd")
                         .queryParam("ids", id)
                         .build()
                 ).retrieve()
-                .body(new ParameterizedTypeReference<List<CoinMarketResponse>>() {
+                .body(new ParameterizedTypeReference<List<CryptoMarketResponse>>() {
                 });
         return(coin == null || coin.isEmpty()) ? null: coin.get(0);
     }
 
 
-    public Map<String,CoinMarketSimpleResponse> getSimple(List<String> ids){
+    public Map<String,CryptoMarketSimpleResponse> getSimple(List<String> ids){
         String coinsIds = String.join(",", ids);
         return restClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -67,6 +67,6 @@ public class CoingeckoClient {
                         .build()
                 ).retrieve()
                 .body(new ParameterizedTypeReference<
-                        Map<String, CoinMarketSimpleResponse>>() {});
+                        Map<String, CryptoMarketSimpleResponse>>() {});
     }
 }

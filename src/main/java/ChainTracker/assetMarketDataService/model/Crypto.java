@@ -14,7 +14,7 @@ import java.util.UUID;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class Coin {
+public class Crypto {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

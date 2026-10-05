@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-public record CoinMarketSimpleResponse(BigDecimal usd,
+public record CryptoMarketSimpleResponse(BigDecimal usd,
                                        @JsonProperty("usd_market_cap")
                                        BigDecimal usdMarketCap,
                                        @JsonProperty("usd_24h_vol")

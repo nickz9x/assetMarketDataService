@@ -1,8 +1,8 @@
 package ChainTracker.assetMarketDataService.controller;
 
-import ChainTracker.assetMarketDataService.dto.CoinDataSimpleResponse;
+import ChainTracker.assetMarketDataService.dto.CryptoDataResponse;
 import ChainTracker.assetMarketDataService.dto.StockAssetResponse;
-import ChainTracker.assetMarketDataService.service.CoinService;
+import ChainTracker.assetMarketDataService.service.CryptoAssetService;
 import ChainTracker.assetMarketDataService.service.StockService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @AllArgsConstructor
 public class InternalController {
     private StockService stockService;
-    private CoinService coinService;
+    private CryptoAssetService cryptoAssetService;
 
     @GetMapping("/data/stock/{symbol}")
     public ResponseEntity<StockAssetResponse> getDataBySymbol(@PathVariable String symbol){
@@ -21,7 +21,7 @@ public class InternalController {
     }
 
     @GetMapping("/data/currency/{assetId}")
-    public ResponseEntity<CoinDataSimpleResponse> getDataByAssetId(@PathVariable String assetId){
-        return ResponseEntity.ok(coinService.getCoinData(assetId));
+    public ResponseEntity<CryptoDataResponse> getCryptoAsset(@PathVariable String assetId){
+        return ResponseEntity.ok(cryptoAssetService.getAsset(assetId));
     }
 }
