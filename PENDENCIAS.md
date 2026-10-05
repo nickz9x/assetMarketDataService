@@ -1,16 +1,16 @@
 # Pendências — assetMarketDataService
 
-Atualizado: 2026-09-25
+Atualizado: 2026-10-05
 
 ---
 
 ## Contexto rápido
 
-Serviço de dados de mercado do **ChainTracker**. Busca cotações na API do
-CoinGecko (e saldo de wallet na Alchemy), cacheia no Redis e publica as mudanças
-no Kafka para os outros serviços.
+Serviço de dados de mercado do **ChainTracker**. Busca cotações de cripto no
+CoinGecko e de ações no Alpaca (e saldo de wallet na Alchemy), cacheia no Redis e
+publica as mudanças no Kafka para os outros serviços.
 
-**Stack:** Spring Boot 4.1.1, Java 21, PostgreSQL, Redis, Kafka, Keycloak (JWT).
+**Stack:** Spring Boot 4.1.1, Java 25, PostgreSQL, Redis, Kafka, Keycloak (JWT).
 
 **Porta:** 8082.
 
@@ -21,25 +21,40 @@ no Kafka para os outros serviços.
 | GET | `/api/currency` | Top 100 moedas por market cap |
 | GET | `/api/currency/{id}` | Uma moeda (cache-first) |
 | GET | `/api/currency/prices?ids=` | Preços simples em lote |
+| GET | `/api/currency/data/{assetId}` | Catálogo da moeda (nome e símbolo) |
+| GET | `/api/stock` | Top 100 ações (cache-first) |
+| GET | `/api/stock/{symbol}` | Uma ação |
+| GET | `/api/internal/data/currency/{assetId}` | Catálogo da moeda, para o `portfolioService` |
+| GET | `/api/internal/data/stock/{symbol}` | Catálogo da ação, para o `portfolioService` |
 | POST | `/api/wallet/balance/{address}` | Saldo ETH de uma wallet (Alchemy) |
+
+Só `/api/currency/**` e `/error` são públicos (`SecurityConfiguration`); o resto
+exige Bearer token do Keycloak.
 
 **Chaves no Redis (é o contrato com o resto do sistema):**
 
 | Chave | TTL | Quem escreve |
 |---|---|---|
-| `coin:{id}` | 2 min | `MarketDataService.updateTop100Data` (a cada 30s) **e** `CoingeckoService.getCoin` |
-| `coin:simple:{id}` | 1 min | `MarketDataService.updateSimplePrice` |
-| `coins:top100` | 2 min | `MarketDataService.updateTop100Data` |
+| `coin:{id}` | 2 min | `CryptoMarketService.refreshTop100` (a cada 30s) **e** `CryptoMarketService.getMarketData` |
+| `coin:simple:{id}` | 1 min | `CryptoMarketService.refreshSimplePrices` |
+| `coins:top100` | 2 min | `CryptoMarketService.refreshTop100` |
+| `coin.data:{id}` | 10 min | `CryptoAssetService.getAsset` |
+| `stock:{symbol}` | 3 min | `StockMarketService.refreshTop100` **e** `StockMarketService.getMarketData` |
+| `stocks:top100` | 3 min | `StockMarketService.refreshTop100` |
+| `stock.data:{symbol}` | 4 h | `StockAssetService.getAssetBySymbol` |
 
 O `portfolioService` **lê `coin:{id}`** — não consome o HTTP. As duas pontas
 precisam concordar no formato do JSON, e nada no compilador garante isso.
-Mexer no `CoinMarketResponse` quebra o outro serviço em silêncio.
+Mexer no `CryptoMarketResponse` quebra o outro serviço em silêncio.
 
-**Kafka:** publica no tópico `market.updated`, chave = id da moeda, valor = o
-`CoinMarketResponse` inteiro. Um evento por moeda, 100 a cada 30 segundos.
+**Kafka:** publica em `market.cripto.updated` (chave = id da moeda) e
+`market.tradfi.updated` (chave = símbolo da ação), valor = o DTO de mercado
+inteiro. Um evento por ativo.
 
-**Como o dado entra:** `CoingeckoScheduler` chama `updateTop100Data` a cada 30s
-(`fixedRate = 30000`). Não há endpoint que force a atualização.
+**Como o dado entra:** `CryptoScheduler` chama `CryptoMarketService.refreshTop100`
+a cada 30s (`fixedRate = 30000`); `StockScheduler.refreshTop100` roda a cada 15s e
+`StockScheduler.refreshCatalog` sincroniza o catálogo da Alpaca 1x por dia. Não há
+endpoint que force a atualização.
 
 ---
 
@@ -47,17 +62,17 @@ Mexer no `CoinMarketResponse` quebra o outro serviço em silêncio.
 
 ### 1. API keys hardcoded e versionadas
 
-**Onde:** `src/main/resources/application.yaml`, chaves `alchemy.api-key` e
-`coingecko.api-key` (por volta das linhas 33 e 36).
+**Onde:** `src/main/resources/application.yaml`, chaves `alchemy.api-key`,
+`coingecko.api-key` e `alpaca.api-key`/`alpaca.api-secret`.
 
-O arquivo é rastreado pelo git, então as duas chaves **já estão no histórico**.
+O arquivo é rastreado pelo git, então as chaves **já estão no histórico**.
 Diferente de uma senha de banco local, essas são credenciais de serviços externos
 com cota e possível cobrança.
 
 **Fix:**
 
-1. Trocar por `${ALCHEMY_API_KEY}` e `${COINGECKO_API_KEY}`.
-2. Rotacionar as duas chaves nos painéis da Alchemy e do CoinGecko.
+1. Trocar por `${ALCHEMY_API_KEY}`, `${COINGECKO_API_KEY}` e `${ALPACA_API_KEY}`.
+2. Rotacionar as chaves nos painéis da Alchemy, do CoinGecko e do Alpaca.
 3. Cobrir `.env` no `.gitignore` e registrar as variáveis na config da IDE.
 
 ---
@@ -74,12 +89,13 @@ chamada 2: HTTP 200 | corpo=0b
 chamada 3: HTTP 200 | corpo=0b
 ```
 
-**Causa:** `CoingeckoService.getCoin:36-38`. Quando o CoinGecko não conhece o id,
-`CoingeckoClient.getCoin:52` devolve `null`. O service então chama
-`redisTemplate.opsForValue().set("coin:"+id, null, Duration.ofMinutes(2))` — o
-serializador grava uma string **vazia** (confirmei: `STRLEN` = 0, `TTL` = 120).
-Na leitura seguinte, uma string vazia desserializa como `null`, então o código
-trata como cache miss, busca de novo, recebe `null` outra vez e devolve 200 vazio.
+**Causa:** `CryptoMarketService.getMarketData:32`. Quando o CoinGecko não conhece
+o id, `CoingeckoClient.getCoin` devolve `null`. O service então chama
+`redisTemplate.opsForValue().set("coin:"+id, null, Duration.ofMinutes(2))` (linha
+38) — o serializador grava uma string **vazia** (confirmei: `STRLEN` = 0,
+`TTL` = 120). Na leitura seguinte, uma string vazia desserializa como `null`, então
+o código trata como cache miss, busca de novo, recebe `null` outra vez e devolve
+200 vazio.
 
 **Duas consequências:**
 
@@ -93,34 +109,38 @@ trata como cache miss, busca de novo, recebe `null` outra vez e devolve 200 vazi
    impacto não fica só aqui.
 
 **Fix:** se `coin == null`, lançar 404 **antes** de escrever no cache. Vale o
-mesmo para `MarketDataService.updateSimplePrice:41`, onde `map.get(id)` é `null`
-quando o CoinGecko não devolve aquele id.
+mesmo para `CryptoMarketService.refreshSimplePrices:76`, onde `map.get(id)` é
+`null` quando o CoinGecko não devolve aquele id.
 
 ### 3. Dois escritores na mesma chave `coin:{id}`
 
-`MarketDataService.updateTop100Data` grava `coin:{id}` a cada 30 segundos para
-as 100 moedas do topo, e `CoingeckoService.getCoin` grava a mesma chave no cache
-miss. São dois donos da mesma chave, com TTLs iguais mas origens diferentes.
+`CryptoMarketService.refreshTop100` grava `coin:{id}` a cada 30 segundos para
+as 100 moedas do topo, e `CryptoMarketService.getMarketData` grava a mesma chave
+no cache miss. São dois donos da mesma chave, com TTLs iguais mas origens
+diferentes.
 
 Hoje não quebra porque o dado é o mesmo (ambos vêm do CoinGecko), mas não existe
 regra dizendo quem manda. Se um dia o TTL divergir, o comportamento passa a
 depender de quem escreveu por último — e é difícil de reproduzir.
 
+O mesmo padrão existe no lado stock: `StockScheduler.refreshTop100` e
+`StockMarketService.getMarketData` escrevem `stock:{symbol}`.
+
 **Fix:** escolher um dono. O natural é o scheduler ser o único escritor, e o
-`getCoin` só ler (o cache miss cai no HTTP e não escreve).
+`getMarketData` só ler (o cache miss cai no HTTP e não escreve).
 
 ### 4. `GET /api/currency` e `/prices` não usam o cache
 
-O `getTop100` (`CoingeckoService:27`) vai direto no `client`, ignorando a chave
+O `getTop100` (`CryptoMarketService:28`) vai direto no `client`, ignorando a chave
 `coins:top100` que o scheduler mantém quentinha a cada 30s. É uma chamada HTTP
 externa por request, com cota do CoinGecko, para um dado que já está no Redis.
 
-O `getSimpleCoin` acerta nesse ponto — lê `coin:simple:{id}` e só busca o que
-falta.
+O `getSimplePrices` acerta nesse ponto — lê `coin:simple:{id}` e só busca o que
+falta. No lado stock o `getTop100` também lê `stocks:top100` primeiro.
 
 ### 5. Saldo de wallet pode estourar NPE
 
-`AssetMarketDataService.getBalance:17` faz `client.getBalance(address).result()`.
+`WalletService.getBalance:17` faz `client.getBalance(address).result()`.
 Se a Alchemy responder com erro (endereço malformado, cota estourada), o corpo
 vem sem `result` e isso vira `NullPointerException` — 500 sem explicação.
 
@@ -133,69 +153,60 @@ uma operação que só lê.
 
 ## 🔵 Limpeza
 
-### 6. Imports órfãos
+### 6. Inconsistência de `final` nos campos injetados
 
-- `service/CoingeckoService.java:7` — `Cacheable`
-- `service/MarketDataService.java:6` — `AllArgsConstructor`; `:9` — `CachePut`
-- `scheduler/CoingeckoScheduler.java:7` — `CachePut`
-- `scheduler/CoingeckoScheduler.java:3` — importa `CoingeckoClient`, que não usa
+`CryptoMarketService.java:22` — `private CoingeckoClient client;` sem `final`,
+enquanto os quatro campos seguintes são `final`. Mesma coisa em
+`StockMarketService` (todos os campos sem `final`) e nos dois schedulers. Marcar
+como `final` deixa o Lombok incluir no construtor e impede reatribuição.
 
-### 7. `@Scheduled` com retorno
+### 7. `CryptoController.getAsset` duplica rota
 
-`CoingeckoScheduler.updateTop100Data:21` está declarado devolvendo
-`List<CoinMarketResponse>`. Método agendado deve ser `void` — o valor de retorno
-é descartado pelo Spring, o que dá a impressão de que alguém consome esse
-resultado. Não consome.
-
-### 8. Datasource configurado e não usado
-
-O `application.yaml` aponta para um Postgres (`localhost:5433/assetDataService`)
-e existe um container para ele no `docker-compose` do ChainTracker, mas o serviço
-não tem entidade, repository nem dependência de JPA. É configuração morta.
-
-Decidir: ou o serviço vai persistir algo (histórico de preços, por exemplo), ou a
-configuração e o container saem.
-
-### 9. Encapsulamento
-
-`WalletController.java:17` — `public AssetMarketDataService service;`. Os outros
-controllers usam `private`. O campo fica exposto e mutável.
-
-### 10. Inconsistência de `final` nos campos injetados
-
-`CoingeckoService.java:22` — `private CoingeckoClient client;` sem `final`,
-enquanto os três campos seguintes são `final`. Mesma coisa em
-`MarketDataService` e `CoingeckoScheduler`. Marcar como `final` deixa o Lombok
-incluir no construtor e impede reatribuição.
+`/api/currency/data/{assetId}` devolve exatamente o que
+`/api/internal/data/currency/{assetId}` devolve — só que sem autenticação. Se o
+front não usa, uma das duas sai.
 
 ---
 
 ## 🧪 DX e testes
 
-### 11. Carga do scheduler
+### 8. Carga do scheduler
 
 A cada 30 segundos: 1 chamada ao CoinGecko, 101 escritas no Redis e **100
-mensagens no Kafka**. São 288 mil mensagens por dia publicadas no tópico
-`market.updated`. Nenhum consumidor lê hoje (o `portfolioService` não tem
-`@KafkaListener` para esse tópico).
+mensagens no Kafka** (`market.cripto.updated`) — 288 mil por dia. O lado stock
+publica mais: `StockScheduler.refreshTop100` roda a cada 15s e manda ~100
+mensagens em `market.tradfi.updated`, outras 576 mil por dia. São ~864 mil
+mensagens diárias. Nenhum consumidor lê hoje (o `portfolioService` não tem
+`@KafkaListener` para esses tópicos).
 
 Vale decidir: o scheduler deveria publicar só o que **mudou**, não o top 100
-inteiro a cada 30s. Isso derruba o volume e é o comportamento esperado de um
+inteiro a cada ciclo. Isso derruba o volume e é o comportamento esperado de um
 evento de "mercado atualizado".
 
-### 12. Não existe teste de verdade
+### 9. Não existe teste de verdade
 
-Só o `AssetMarketDataServiceApplicationTests` gerado pelo Initializr. Nada cobre
-o `CoingeckoClient` (parsing das respostas), nem o cálculo de saldo da Alchemy
+O `AssetMarketDataServiceApplicationTests` gerado pelo Initializr foi removido na
+branch de migração, então hoje não há nenhum teste. Nada cobre o
+`CoingeckoClient` (parsing das respostas), nem o cálculo de saldo da Alchemy
 (conversão de wei para ETH), que são lógica testável sem rede.
 
 ---
 
 ## ✅ Já resolvido (não refazer)
 
+- **Entidades e repository.** O serviço passou a persistir o catálogo de ativos
+  (`Crypto` e `Stock`) com JPA, ligado ao Postgres que já estava configurado no
+  `application.yaml`. A tabela antiga `coin` fica órfã depois do rename para
+  `crypto` — pode dar `DROP TABLE coin;` quando quiser.
+- **Imports órfãos.** Removidos de `CoingeckoService`, `MarketDataService`,
+  `CoingeckoScheduler`, `StockRepository` e `StockService`.
+- **`@Scheduled` com retorno.** Os métodos agendados viraram `void` — o valor de
+  retorno era descartado pelo Spring e dava a impressão de que alguém consumia.
+- **Encapsulamento do `WalletController`.** O campo `public AssetMarketDataService
+  service` virou `private WalletService walletService`.
 - **Preço vinha `null`.** O `getCoin` usava `coins/{id}`, e nesse endpoint o
   CoinGecko aninha os preços em `market_data.current_price.usd` — o
-  `CoinMarketResponse` é plano e recebia tudo nulo. Trocado por `coins/markets?ids=`,
+  `CryptoMarketResponse` é plano e recebia tudo nulo. Trocado por `coins/markets?ids=`,
   que devolve o formato plano e é o mesmo endpoint do top 100.
 - **`getCoin` não populava o cache.** Lia `coin:{id}` mas não escrevia no miss,
   então só o scheduler alimentava a chave. Agora escreve com TTL de 2 min.
