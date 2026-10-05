@@ -73,6 +73,14 @@
         <!-- FLYWAY -->
         <!-- ========================= -->
 
+        <!-- No Boot 4 a auto-configuracao do Flyway saiu do
+             spring-boot-autoconfigure para o modulo spring-boot-flyway; so o
+             flyway-core no classpath nao liga mais nada. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>

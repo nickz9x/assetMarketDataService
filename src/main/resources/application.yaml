@@ -27,6 +27,12 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+  flyway:
+    # Bancos que ja rodaram com ddl-auto: update tem as tabelas criadas pelo
+    # Hibernate e nenhum historico do Flyway. O baseline no 0 registra esse
+    # estado sem pular a V1 (as migracoes usam IF NOT EXISTS).
+    baseline-on-migrate: true
+    baseline-version: 0
   jpa:
     properties:
       hibernate:
@@ -35,7 +41,9 @@ spring:
         order_inserts: true
         order_updates: true
     hibernate:
-      ddl-auto: update
+      # O schema e do Flyway (db/migration); o Hibernate so confere se as
+      # entidades batem com ele.
+      ddl-auto: validate
 alchemy:
   url: "https://eth-mainnet.g.alchemy.com/v2/"
   api-key: "alch_Z5hfN0VNs-lnkZ96lk6U8"
