@@ -2,7 +2,7 @@ package ChainTracker.assetMarketDataService.controller;
 
 
 import ChainTracker.assetMarketDataService.dto.StockMarketResponse;
-import ChainTracker.assetMarketDataService.service.AlpacaService;
+import ChainTracker.assetMarketDataService.service.StockMarketService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,18 +16,18 @@ import java.util.Map;
 @RequestMapping("/api/stock")
 @AllArgsConstructor
 public class StockController {
-    private AlpacaService service;
+    private StockMarketService stockMarketService;
 
 
 
     @GetMapping
-    public ResponseEntity<Map<String, StockMarketResponse>> getTop100Stocks(){
-        return ResponseEntity.ok(service.getTop100Stock());
+    public ResponseEntity<Map<String, StockMarketResponse>> getTop100(){
+        return ResponseEntity.ok(stockMarketService.getTop100());
     }
 
     @GetMapping("/{symbol}")
-    public ResponseEntity<StockMarketResponse> getStock(@PathVariable String symbol){
-        return ResponseEntity.ok(service.getStock(symbol));
+    public ResponseEntity<StockMarketResponse> getMarketData(@PathVariable String symbol){
+        return ResponseEntity.ok(stockMarketService.getMarketData(symbol));
     }
 
 }

@@ -17,13 +17,13 @@ import java.util.Map;
 
 @Service
 @AllArgsConstructor
-public class AlpacaService {
+public class StockMarketService {
     private RedisTemplate<String,Object> redisTemplate;
     private ObjectMapper objectMapper;
     private AlpacaDataClient alpacaDataClient;
     private KafkaTemplate<String, Object> kafkaTemplate;
 
-    public Map<String, StockMarketResponse> getTop100Stock(){
+    public Map<String, StockMarketResponse> getTop100(){
         Object cached = redisTemplate.opsForValue().get("stocks:top100");
         if (cached != null){
             return objectMapper.convertValue(cached, new TypeReference<Map<String, StockMarketResponse>>() {
@@ -32,7 +32,7 @@ public class AlpacaService {
         return refreshTop100();
     }
 
-    public StockMarketResponse getStock(String symbol){
+    public StockMarketResponse getMarketData(String symbol){
         symbol = symbol.toUpperCase();
         Object cached = redisTemplate.opsForValue().get("stock:"+symbol);
         if (cached != null){

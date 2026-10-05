@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class StockService {
+public class StockAssetService {
     private final JdbcTemplate jdbcTemplate;
     private final StockRepository stockRepository;
     private final RedisTemplate<String,Object> redisTemplate;
@@ -28,7 +28,7 @@ public class StockService {
     private final AlpacaAssetClient alpacaAssetClient;
 
     @Transactional
-    public void saveAll(List<StockAssetResponse> responses) {
+    public void saveAllAssets(List<StockAssetResponse> responses) {
 
 
         if (responses == null || responses.isEmpty()) {
@@ -42,7 +42,7 @@ public class StockService {
                 name = EXCLUDED.name,
                 exchange = EXCLUDED.exchange,
                 active = EXCLUDED.active
-            """; // 
+            """; //
 
         jdbcTemplate.batchUpdate(sql, responses, 500, (ps, dto) -> {
             ps.setObject(1, UUID.randomUUID());
@@ -53,7 +53,7 @@ public class StockService {
         });
     }
 
-    public StockAssetResponse findBySymbol(String symbol){
+    public StockAssetResponse getAssetBySymbol(String symbol){
         symbol = symbol.toUpperCase();
         Object cached = redisTemplate.opsForValue().get("stock.data:" + symbol);
         if(cached == null){
@@ -67,7 +67,7 @@ public class StockService {
 
     public List<StockAssetResponse> syncUsEquity(){
         List<StockAssetResponse> list = alpacaAssetClient.updateUsEquity();
-        saveAll(list);
+        saveAllAssets(list);
         return list;
     }
 }
