@@ -1,8 +1,8 @@
 package ChainTracker.assetMarketDataService.service;
 
+import ChainTracker.assetMarketDataService.client.AlpacaAssetClient;
 import ChainTracker.assetMarketDataService.dto.StockAssetResponse;
 import ChainTracker.assetMarketDataService.mapper.StockAssetMapper;
-import ChainTracker.assetMarketDataService.mapper.StockMarketMapper;
 import ChainTracker.assetMarketDataService.model.Stock;
 import ChainTracker.assetMarketDataService.repository.StockRepository;
 import jakarta.transaction.Transactional;
@@ -25,6 +25,7 @@ public class StockService {
     private final StockRepository stockRepository;
     private final RedisTemplate<String,Object> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final AlpacaAssetClient alpacaAssetClient;
 
     @Transactional
     public void saveAll(List<StockAssetResponse> responses) {
@@ -62,5 +63,11 @@ public class StockService {
             return dto;
         }
         return objectMapper.convertValue(cached,StockAssetResponse.class);
+    }
+
+    public List<StockAssetResponse> syncUsEquity(){
+        List<StockAssetResponse> list = alpacaAssetClient.updateUsEquity();
+        saveAll(list);
+        return list;
     }
 }

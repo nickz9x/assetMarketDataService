@@ -1,25 +1,27 @@
 package ChainTracker.assetMarketDataService.service;
 
-import ChainTracker.assetMarketDataService.client.AlpacaAssetClient;
-import ChainTracker.assetMarketDataService.dto.StockAssetResponse;
+import ChainTracker.assetMarketDataService.client.AlpacaDataClient;
 import ChainTracker.assetMarketDataService.dto.StockMarketResponse;
+import ChainTracker.assetMarketDataService.dto.StockSnapshotResponse;
+import ChainTracker.assetMarketDataService.mapper.StockMarketMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
-import java.util.List;
+import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
 @AllArgsConstructor
 public class AlpacaService {
     private RedisTemplate<String,Object> redisTemplate;
-    private MarketDataService service;
     private ObjectMapper objectMapper;
-    private AlpacaAssetClient assetClient;
-    private StockService stockService;
+    private AlpacaDataClient alpacaDataClient;
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     public Map<String, StockMarketResponse> getTop100Stock(){
         Object cached = redisTemplate.opsForValue().get("stocks:top100");
@@ -27,7 +29,7 @@ public class AlpacaService {
             return objectMapper.convertValue(cached, new TypeReference<Map<String, StockMarketResponse>>() {
             });
         }
-        return service.updateTop100Stocks();
+        return refreshTop100();
     }
 
     public StockMarketResponse getStock(String symbol){
@@ -36,12 +38,27 @@ public class AlpacaService {
         if (cached != null){
             return objectMapper.convertValue(cached, StockMarketResponse.class);
         }
-        return service.getStock(symbol);
+        return refreshMarketData(symbol);
     }
 
-    public List<StockAssetResponse> getUsEquity(){
-        List<StockAssetResponse> list = assetClient.updateUsEquity();
-        stockService.saveAll(list);
-        return list;
+    public Map<String, StockMarketResponse> refreshTop100(){
+        Map<String,StockMarketResponse> stocksMap = new HashMap<>();
+        Map<String, StockSnapshotResponse> quotes = alpacaDataClient.getSnapshots();
+        for (Map.Entry<String, StockSnapshotResponse> stock : quotes.entrySet()) {
+            StockMarketResponse response = StockMarketMapper.toResponse(stock.getKey(), stock.getValue());
+            stocksMap.put(stock.getKey(),response);
+            redisTemplate.opsForValue().set("stock:"+stock.getKey(), response ,Duration.ofMinutes(3));
+            kafkaTemplate.send("market.tradfi.updated",stock.getKey(),response);
+        }
+        redisTemplate.opsForValue().set("stocks:top100",stocksMap,Duration.ofMinutes(3));
+        return stocksMap;
+    }
+
+    private StockMarketResponse refreshMarketData(String symbol){
+        StockSnapshotResponse snapshot = alpacaDataClient.getSnapshot(symbol);
+        StockMarketResponse response = StockMarketMapper.toResponse(symbol, snapshot);
+        redisTemplate.opsForValue().set("stock:"+response.symbol(),response,Duration.ofMinutes(3));
+        kafkaTemplate.send("market.tradfi.updated",symbol,response);
+        return response;
     }
 }

@@ -1,11 +1,12 @@
 package ChainTracker.assetMarketDataService.service;
 
 import ChainTracker.assetMarketDataService.client.CoingeckoClient;
-import ChainTracker.assetMarketDataService.dto.CoinDataSimpleResponse;
+import ChainTracker.assetMarketDataService.dto.CoinDataSimpleRequest;
 import ChainTracker.assetMarketDataService.dto.CoinMarketResponse;
 import ChainTracker.assetMarketDataService.dto.CoinMarketSimpleResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
@@ -21,7 +22,8 @@ public class CoingeckoService {
     private CoingeckoClient client;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
-    private final MarketDataService marketDataService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final CoinService coinService;
 
     public List<CoinMarketResponse> getTop100(){
         return client.getTop100Coins();
@@ -51,11 +53,28 @@ public class CoingeckoService {
             }
         }
         if (!missIds.isEmpty()){
-            Map<String, CoinMarketSimpleResponse> updated = marketDataService.updateSimplePrice(missIds);
+            Map<String, CoinMarketSimpleResponse> updated = refreshSimplePrices(missIds);
             result.putAll(updated);
         }
         return result;
     }
 
+    public List<CoinMarketResponse> refreshTop100(){
+        List<CoinMarketResponse> coins = client.getTop100Coins();
+        for (CoinMarketResponse coin : coins) {
+            coinService.save(new CoinDataSimpleRequest(coin.id(),coin.name(),coin.symbol()));
+            redisTemplate.opsForValue().set("coin:"+ coin.id(),coin, Duration.ofMinutes(2));
+            kafkaTemplate.send("market.cripto.updated",coin.id(),coin);
+        }
+        redisTemplate.opsForValue().set("coins:top100",coins ,Duration.ofMinutes(2));
+        return coins;
+    }
 
+    private Map<String, CoinMarketSimpleResponse> refreshSimplePrices(List<String> ids){
+        Map<String, CoinMarketSimpleResponse> map = client.getSimple(ids);
+        for (String id: ids){
+            redisTemplate.opsForValue().set("coin:simple:"+ id, map.get(id),Duration.ofMinutes(1));
+        }
+        return map;
+    }
 }
