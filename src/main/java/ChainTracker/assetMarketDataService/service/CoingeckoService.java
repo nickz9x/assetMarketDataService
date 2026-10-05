@@ -5,10 +5,8 @@ import ChainTracker.assetMarketDataService.dto.CoinDataSimpleResponse;
 import ChainTracker.assetMarketDataService.dto.CoinMarketResponse;
 import ChainTracker.assetMarketDataService.dto.CoinMarketSimpleResponse;
 import lombok.AllArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;

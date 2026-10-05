@@ -2,14 +2,11 @@ package ChainTracker.assetMarketDataService.controller;
 
 import ChainTracker.assetMarketDataService.dto.CoinDataSimpleResponse;
 import ChainTracker.assetMarketDataService.dto.StockAssetResponse;
-import ChainTracker.assetMarketDataService.service.AlpacaService;
 import ChainTracker.assetMarketDataService.service.CoinService;
 import ChainTracker.assetMarketDataService.service.StockService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/internal")

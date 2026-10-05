@@ -1,7 +1,6 @@
 package ChainTracker.assetMarketDataService.service;
 
 import ChainTracker.assetMarketDataService.client.AlpacaAssetClient;
-import ChainTracker.assetMarketDataService.client.AlpacaDataClient;
 import ChainTracker.assetMarketDataService.dto.StockAssetResponse;
 import ChainTracker.assetMarketDataService.dto.StockMarketResponse;
 import lombok.AllArgsConstructor;

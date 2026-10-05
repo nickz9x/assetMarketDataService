@@ -1,12 +1,8 @@
 package ChainTracker.assetMarketDataService.mapper;
 
-import ChainTracker.assetMarketDataService.dto.StockAssetResponse;
 import ChainTracker.assetMarketDataService.dto.StockMarketResponse;
 import ChainTracker.assetMarketDataService.dto.StockSnapshotResponse;
-import ChainTracker.assetMarketDataService.model.Stock;
-import org.springframework.stereotype.Component;
 
-@Component
 public class StockMarketMapper {
 
     public static StockMarketResponse toResponse(
