@@ -35,7 +35,7 @@ public class CryptoMarketService {
             return objectMapper.convertValue(cached, CryptoMarketResponse.class);
         }
         CryptoMarketResponse coin = client.getCoin(id);
-        redisTemplate.opsForValue().set("coin:"+id,coin, Duration.ofMinutes(2));
+        redisTemplate.opsForValue().set("coin:"+id,coin, Duration.ofMinutes(1));
         return coin;
     }
 
@@ -66,7 +66,7 @@ public class CryptoMarketService {
             redisTemplate.opsForValue().set("coin:"+ coin.id(),coin, Duration.ofMinutes(2));
             kafkaTemplate.send("market.cripto.updated",coin.id(),coin);
         }
-        redisTemplate.opsForValue().set("coins:top100",coins ,Duration.ofMinutes(2));
+        redisTemplate.opsForValue().set("coins:top100",coins ,Duration.ofMinutes(1));
         return coins;
     }
 
