@@ -8,5 +8,4 @@ import java.util.UUID;
 
 public interface StockRepository extends JpaRepository<Stock, UUID> {
      Optional<Stock> findBySymbol(String symbol);
-
 }
