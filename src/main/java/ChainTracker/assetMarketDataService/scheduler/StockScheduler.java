@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class StockScheduler {
-    private StockMarketService stockMarketService;
-    private StockAssetService stockAssetService;
+    private final StockMarketService stockMarketService;
+    private final StockAssetService stockAssetService;
 
     @Scheduled(fixedRate = 15000)
     public void refreshTop100(){

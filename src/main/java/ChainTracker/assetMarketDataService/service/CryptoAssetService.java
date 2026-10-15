@@ -17,9 +17,9 @@ import java.time.Duration;
 @Service
 @AllArgsConstructor
 public class CryptoAssetService {
-    private CryptoRepository cryptoRepository;
-    private RedisTemplate<String,Object> redisTemplate;
-    private ObjectMapper objectMapper;
+    private final CryptoRepository cryptoRepository;
+    private final RedisTemplate<String,Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
 
     public CryptoDataResponse saveAsset(CryptoDataRequest dto) {

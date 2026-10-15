@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class CryptoScheduler {
-    private CryptoMarketService cryptoMarketService;
+    private final CryptoMarketService cryptoMarketService;
 
     @Scheduled(fixedRate = 30000)
     public void refreshTop100(){

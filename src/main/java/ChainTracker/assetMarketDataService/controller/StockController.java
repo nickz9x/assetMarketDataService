@@ -16,7 +16,7 @@ import java.util.Map;
 @RequestMapping("/api/stock")
 @AllArgsConstructor
 public class StockController {
-    private StockMarketService stockMarketService;
+    private final StockMarketService stockMarketService;
 
 
 

@@ -16,8 +16,8 @@ import java.util.Map;
 @RequestMapping("/api/currency")
 @AllArgsConstructor
 public class CryptoController {
-    private CryptoMarketService cryptoMarketService;
-    private CryptoAssetService cryptoAssetService;
+    private final CryptoMarketService cryptoMarketService;
+    private final CryptoAssetService cryptoAssetService;
 
     @GetMapping
     public ResponseEntity<List<CryptoMarketResponse>> getTop100(){

@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @RequestMapping("/api/wallet")
 @AllArgsConstructor
 public class WalletController {
-    private WalletService walletService;
+    private final WalletService walletService;
 
 
     @PostMapping("/balance/{address}")

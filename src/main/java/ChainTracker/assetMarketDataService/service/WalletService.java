@@ -10,7 +10,7 @@ import java.math.BigInteger;
 @Service
 @AllArgsConstructor
 public class WalletService {
-    private AlchemyClient client;
+    private final AlchemyClient client;
 
 
     public BigDecimal getBalance(String address) {
