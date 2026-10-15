@@ -22,7 +22,7 @@
     <description>Spring Boot Application</description>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>21</java.version>
 
         <mapstruct.version>1.6.3</mapstruct.version>
         <resilience4j.version>2.4.0</resilience4j.version>
