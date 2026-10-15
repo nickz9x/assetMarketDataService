@@ -18,10 +18,10 @@ import java.util.Map;
 @Service
 @AllArgsConstructor
 public class StockMarketService {
-    private RedisTemplate<String,Object> redisTemplate;
-    private ObjectMapper objectMapper;
-    private AlpacaDataClient alpacaDataClient;
-    private KafkaTemplate<String, Object> kafkaTemplate;
+    private final RedisTemplate<String,Object> redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final AlpacaDataClient alpacaDataClient;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public Map<String, StockMarketResponse> getTop100(){
         Object cached = redisTemplate.opsForValue().get("stocks:top100");
