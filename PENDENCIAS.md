@@ -1,6 +1,6 @@
 # Pendências — assetMarketDataService
 
-Atualizado: 2026-10-05
+Atualizado: 2026-10-15
 
 ---
 
@@ -24,8 +24,6 @@ publica as mudanças no Kafka para os outros serviços.
 | GET | `/api/currency/data/{assetId}` | Catálogo da moeda (nome e símbolo) |
 | GET | `/api/stock` | Top 100 ações (cache-first) |
 | GET | `/api/stock/{symbol}` | Uma ação |
-| GET | `/api/internal/data/currency/{assetId}` | Catálogo da moeda, para o `portfolioService` |
-| GET | `/api/internal/data/stock/{symbol}` | Catálogo da ação, para o `portfolioService` |
 | POST | `/api/wallet/balance/{address}` | Saldo ETH de uma wallet (Alchemy) |
 
 Só `/api/currency/**` e `/error` são públicos (`SecurityConfiguration`); o resto
@@ -35,9 +33,9 @@ exige Bearer token do Keycloak.
 
 | Chave | TTL | Quem escreve |
 |---|---|---|
-| `coin:{id}` | 2 min | `CryptoMarketService.refreshTop100` (a cada 30s) **e** `CryptoMarketService.getMarketData` |
+| `coin:{id}` | 2 min no `refreshTop100`, 1 min no `getMarketData` | `CryptoMarketService.refreshTop100` (a cada 30s) **e** `CryptoMarketService.getMarketData` |
 | `coin:simple:{id}` | 1 min | `CryptoMarketService.refreshSimplePrices` |
-| `coins:top100` | 2 min | `CryptoMarketService.refreshTop100` |
+| `coins:top100` | 1 min | `CryptoMarketService.refreshTop100` |
 | `coin.data:{id}` | 10 min | `CryptoAssetService.getAsset` |
 | `stock:{symbol}` | 3 min | `StockMarketService.refreshTop100` **e** `StockMarketService.getMarketData` |
 | `stocks:top100` | 3 min | `StockMarketService.refreshTop100` |
@@ -79,7 +77,16 @@ com cota e possível cobrança.
 
 ## 🟡 Importante
 
-### 2. Id de moeda inexistente devolve 200 com corpo vazio
+### ✅ 2. Id de moeda inexistente devolve 200 com corpo vazio
+
+**Resolvido em 2026-10-15.** As duas pontas do fix estão feitas:
+
+- `CryptoMarketService.getMarketData:47` lança `ResponseStatusException(HttpStatus.NOT_FOUND)`
+  quando o `getCoin` devolve `null`, antes de escrever no cache.
+- `CryptoMarketService.refreshSimplePrices:86-97` só grava em `coin:simple:{id}` quando o
+  `map.get(id)` existe — e devolve `Map.of()` se o CoinGecko vier com corpo vazio.
+
+As duas consequências abaixo sumiram (não há mais chave vazia no Redis).
 
 **Verificado em 2026-09-25** chamando `GET /api/currency/nao-existe-xyz`:
 
@@ -123,13 +130,31 @@ Hoje não quebra porque o dado é o mesmo (ambos vêm do CoinGecko), mas não ex
 regra dizendo quem manda. Se um dia o TTL divergir, o comportamento passa a
 depender de quem escreveu por último — e é difícil de reproduzir.
 
+**Atualização 2026-10-15:** o `getTop100` chegou a virar um terceiro escritor de
+`coin:{id}` (e sem TTL); corrigido — o cache miss agora cai em `refreshTop100()`.
+Seguem os dois donos originais.
+
+**E os TTLs já divergiram:** o commit `07c7f30` baixou o `getMarketData` para 1 min,
+enquanto o `refreshTop100` segue gravando 2 min na mesma chave. É exatamente o cenário
+descrito acima — hoje quem manda é quem escreveu por último.
+
 O mesmo padrão existe no lado stock: `StockScheduler.refreshTop100` e
 `StockMarketService.getMarketData` escrevem `stock:{symbol}`.
 
 **Fix:** escolher um dono. O natural é o scheduler ser o único escritor, e o
 `getMarketData` só ler (o cache miss cai no HTTP e não escreve).
 
-### 4. `GET /api/currency` e `/prices` não usam o cache
+### ✅ 4. `GET /api/currency` e `/prices` não usam o cache
+
+**Resolvido em 2026-10-15 (working tree, não commitado).** O `getTop100`
+(`CryptoMarketService:31-38`) lê `coins:top100` primeiro, com o null check e o
+`convertValue` que faltavam.
+
+**Fallback corrigido em 2026-10-15.** No cache vazio o `getTop100` chama `refreshTop100()`
+(`CryptoMarketService:37`) — grava as 101 chaves com TTL e alimenta as duas chaves.
+
+No stock o bloco que chamava `refreshTop100()` duas vezes saiu: o cache miss agora é
+`return refreshTop100();` (`StockMarketService:32`).
 
 O `getTop100` (`CryptoMarketService:28`) vai direto no `client`, ignorando a chave
 `coins:top100` que o scheduler mantém quentinha a cada 30s. É uma chamada HTTP
@@ -153,14 +178,23 @@ uma operação que só lê.
 
 ## 🔵 Limpeza
 
-### 6. Inconsistência de `final` nos campos injetados
+### ✅ 6. Inconsistência de `final` nos campos injetados
+
+**Resolvido em 2026-10-15.** Todos os campos injetados viraram `final`: os dois
+services de cotação, os dois schedulers, `CryptoAssetService`, `WalletService` e os
+três controllers (`StockAssetService` já estava certo).
 
 `CryptoMarketService.java:22` — `private CoingeckoClient client;` sem `final`,
 enquanto os quatro campos seguintes são `final`. Mesma coisa em
 `StockMarketService` (todos os campos sem `final`) e nos dois schedulers. Marcar
 como `final` deixa o Lombok incluir no construtor e impede reatribuição.
 
-### 7. `CryptoController.getAsset` duplica rota
+### ✅ 7. `CryptoController.getAsset` duplica rota
+
+**Resolvido em 2026-10-15.** O `InternalController` saiu inteiro — sobraram
+`/api/currency/data/{assetId}` (público) para o catálogo da moeda e
+`/api/stock/{symbol}` para a ação. Efeito colateral: `StockAssetService.getAssetBySymbol`
+(que servia `/api/internal/data/stock/{symbol}`) ficou sem chamador.
 
 `/api/currency/data/{assetId}` devolve exatamente o que
 `/api/internal/data/currency/{assetId}` devolve — só que sem autenticação. Se o
