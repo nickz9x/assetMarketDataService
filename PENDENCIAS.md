@@ -200,6 +200,12 @@ como `final` deixa o Lombok incluir no construtor e impede reatribuição.
 `/api/internal/data/currency/{assetId}` devolve — só que sem autenticação. Se o
 front não usa, uma das duas sai.
 
+**Revertido em 2026-10-18:** o `InternalController` voltou. O `portfolioService`
+continua consumindo `/api/internal/data/currency/{assetId}` e
+`/api/internal/data/stock/{symbol}` para validar o ativo e pegar o id canônico
+no create de posição e no alerta; sem as rotas, as chamadas viram 401/404 e
+estouram 500 lá. O `getAssetBySymbol` voltou a ter chamador.
+
 ---
 
 ## 🧪 DX e testes

@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/internal")
 @AllArgsConstructor
 public class InternalController {
-    private StockAssetService stockAssetService;
-    private CryptoAssetService cryptoAssetService;
+    private final StockAssetService stockAssetService;
+    private final CryptoAssetService cryptoAssetService;
 
     @GetMapping("/data/stock/{symbol}")
     public ResponseEntity<StockAssetResponse> getStockAsset(@PathVariable String symbol){

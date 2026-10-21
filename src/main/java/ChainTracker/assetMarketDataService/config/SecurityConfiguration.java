@@ -18,8 +18,9 @@ public class SecurityConfiguration {
             // Pagina de erro interna do Spring. Sem liberar, QUALQUER falha da
             // aplicacao vira 401 e a causa real fica escondida atras dele.
             auth.requestMatchers("/error").permitAll();
-            // Catalogo de moedas e dado publico de mercado.
-            auth.requestMatchers("/api/currency/**").permitAll();
+            // Rotas duplicadas para o bot do Telegram, que nao carrega JWT.
+            // As originais (/api/currency, /api/stock, /api/internal) exigem token.
+            auth.requestMatchers("/api/bot/**").permitAll();
             // Todo o resto exige um Bearer token valido do Keycloak.
             auth.anyRequest().authenticated();
         });
