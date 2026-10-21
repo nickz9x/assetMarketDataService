@@ -20,7 +20,7 @@ public class SecurityConfiguration {
             auth.requestMatchers("/error").permitAll();
             // Rotas duplicadas para o bot do Telegram, que nao carrega JWT.
             // As originais (/api/currency, /api/stock, /api/internal) exigem token.
-            auth.requestMatchers("/api/bot/**").permitAll();
+            auth.requestMatchers("/api/bot/**").hasAuthority("SCOPE_bot");
             // Todo o resto exige um Bearer token valido do Keycloak.
             auth.anyRequest().authenticated();
         });
