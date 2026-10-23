@@ -11,9 +11,9 @@ spring:
           # O issuer-uri dispara o discovery em
           # /.well-known/openid-configuration, que devolve o jwk-set-uri e
           # faz o Spring validar a claim "iss" automaticamente.
-          issuer-uri: http://keycloak:8081/realms/ChainTracker
+          issuer-uri: http://keycloak:8080/realms/ChainTracker
   datasource:
-    url: jdbc:postgresql://assetData-service-db:5433/assetDataService
+    url: jdbc:postgresql://assetData-service-db:5432/assetDataService
     username: user
     password: postgres
   data:
@@ -44,6 +44,9 @@ spring:
       # O schema e do Flyway (db/migration); o Hibernate so confere se as
       # entidades batem com ele.
       ddl-auto: validate
+alchemy:
+  api-key: "key"
+  url: "url"
 coingecko:
   url: "https://api.coingecko.com/api/v3/"
   api-key: ${COINGECKO_KEY}
