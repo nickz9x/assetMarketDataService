@@ -11,19 +11,19 @@ spring:
           # O issuer-uri dispara o discovery em
           # /.well-known/openid-configuration, que devolve o jwk-set-uri e
           # faz o Spring validar a claim "iss" automaticamente.
-          issuer-uri: http://localhost:8081/realms/ChainTracker
+          issuer-uri: http://keycloak:8081/realms/ChainTracker
   datasource:
-    url: jdbc:postgresql://localhost:5433/assetDataService
+    url: jdbc:postgresql://assetData-service-db:5433/assetDataService
     username: user
     password: postgres
   data:
     redis:
       password: admin
-      host: localhost
+      host: my-redis
       port: 6379
       type: redis
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
@@ -44,16 +44,13 @@ spring:
       # O schema e do Flyway (db/migration); o Hibernate so confere se as
       # entidades batem com ele.
       ddl-auto: validate
-alchemy:
-  url: "https://eth-mainnet.g.alchemy.com/v2/"
-  api-key: "alch_Z5hfN0VNs-lnkZ96lk6U8"
 coingecko:
   url: "https://api.coingecko.com/api/v3/"
-  api-key: "CG-qjxKu4aBr8hkDD1DVWRgg8wG"
+  api-key: ${COINGECKO_KEY}
 alpaca:
   trading-url: "https://paper-api.alpaca.markets/v2/"
   url: "https://data.alpaca.markets/v2/"
-  api-key: "PK25OOHQUWHCUHF6YLFJUO7P2Q"
-  api-secret: "DSHSTNNV5nT6MTQR6XqKDzmTDXL6kq6s7qdMgRRcWNny"
+  api-key: ${ALPACA_KEY}
+  api-secret: ${ALPACA_SECRET}
 server:
   port: 8082
