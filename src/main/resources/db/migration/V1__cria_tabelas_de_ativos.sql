@@ -1,3 +1,9 @@
+-- Schema do catalogo de ativos: crypto (CoinGecko) e stock (Alpaca).
+--
+-- IF NOT EXISTS porque bancos que ja rodaram com ddl-auto: update tem as
+-- tabelas criadas pelo Hibernate e nenhum historico do Flyway. O
+-- spring.flyway.baseline-on-migrate (application.yaml) registra esse estado
+-- no 0 em vez de pular esta migracao.
 
 CREATE TABLE IF NOT EXISTS crypto (
     id       uuid NOT NULL,
