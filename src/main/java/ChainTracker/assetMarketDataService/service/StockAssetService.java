@@ -34,7 +34,7 @@ public class StockAssetService {
         if (responses == null || responses.isEmpty()) {
             return;
         }
-
+        //foi usado esse comando para melhor performance
         String sql = """
             INSERT INTO stock (id,symbol, name, exchange, active)
             VALUES (?, ?, ?, ?, ?)

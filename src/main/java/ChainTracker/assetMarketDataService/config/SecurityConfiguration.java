@@ -15,13 +15,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http){
         http.csrf(csrf -> csrf.disable());
         http.authorizeHttpRequests(auth -> {
-            // Pagina de erro interna do Spring. Sem liberar, QUALQUER falha da
-            // aplicacao vira 401 e a causa real fica escondida atras dele.
             auth.requestMatchers("/error").permitAll();
-            // Rotas duplicadas para o bot do Telegram, que nao carrega JWT.
-            // As originais (/api/currency, /api/stock, /api/internal) exigem token.
             auth.requestMatchers("/api/bot/**").permitAll();
-            // Todo o resto exige um Bearer token valido do Keycloak.
             auth.anyRequest().authenticated();
         });
         http.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
