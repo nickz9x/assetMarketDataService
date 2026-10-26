@@ -261,6 +261,7 @@ As rotas abaixo são cópias das consultas de mercado usadas pelo fluxo do Teleg
 
 | Método | Caminho | Descrição |
 |---|---|---|
+| `GET` | `/api/bot/assets/search?q=<termo>` | busca até 10 criptos e 10 ações por id, símbolo ou nome |
 | `GET` | `/api/bot/currency` | lista das 100 maiores criptomoedas |
 | `GET` | `/api/bot/currency/{id}` | cotação individual de cripto |
 | `GET` | `/api/bot/currency/{id}/data` | metadados da cripto |

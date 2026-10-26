@@ -1,9 +1,11 @@
 package ChainTracker.assetMarketDataService.controller;
 
+import ChainTracker.assetMarketDataService.dto.AssetSearchResponse;
 import ChainTracker.assetMarketDataService.dto.CryptoDataResponse;
 import ChainTracker.assetMarketDataService.dto.CryptoMarketResponse;
 import ChainTracker.assetMarketDataService.dto.StockAssetResponse;
 import ChainTracker.assetMarketDataService.dto.StockMarketResponse;
+import ChainTracker.assetMarketDataService.service.AssetSearchService;
 import ChainTracker.assetMarketDataService.service.CryptoAssetService;
 import ChainTracker.assetMarketDataService.service.CryptoMarketService;
 import ChainTracker.assetMarketDataService.service.StockAssetService;
@@ -19,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -33,6 +36,7 @@ public class BotAssetController {
     private final CryptoAssetService cryptoAssetService;
     private final StockMarketService stockMarketService;
     private final StockAssetService stockAssetService;
+    private final AssetSearchService assetSearchService;
 
     @Operation(summary = "Lista as 100 maiores criptomoedas para o bot")
     @ApiResponses({
@@ -99,5 +103,18 @@ public class BotAssetController {
             @Parameter(description = "Símbolo da ação", example = "AAPL")
             @PathVariable String symbol){
         return ResponseEntity.ok(stockAssetService.getAssetBySymbol(symbol));
+    }
+
+    @Operation(summary = "Busca ativos por nome, símbolo ou id", description = "Pesquisa no catálogo de criptomoedas e de ações acompanhadas pelo ChainTracker.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resultados retornados"),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
+            @ApiResponse(responseCode = "403", description = "Token sem o escopo bot")
+    })
+    @GetMapping("/assets/search")
+    public ResponseEntity<List<AssetSearchResponse>> searchAssets(
+            @Parameter(description = "Nome, símbolo ou id do ativo", example = "apple")
+            @RequestParam String q){
+        return ResponseEntity.ok(assetSearchService.search(q));
     }
 }
